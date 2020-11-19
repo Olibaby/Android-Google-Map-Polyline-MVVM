@@ -103,12 +103,22 @@ class HomeFragment : BaseFragment(), OnMapReadyCallback {
         mGoogleMap?.uiSettings?.isZoomGesturesEnabled = true
         mGoogleMap?.uiSettings?.isMyLocationButtonEnabled = false
 
-        val ny = LatLng(40.7143528, -74.0059731)
+
         //mGoogleMap!!.moveCamera(CameraUpdateFactory.newLatLng(ny))
-        mGoogleMap?.addMarker(MarkerOptions().position(ny).title("Marker Title"))
+        addMarker(6.436160, 3.523290)
+        addMarker(6.436160, 3.503290)
+        addMarker(6.436160, 3.522290)
+        addMarker(6.436160, 3.533290)
+
 
 
     }
+
+    fun addMarker(latitude:Double,longitude:Double){
+        val latLng = LatLng(latitude, longitude)
+        mGoogleMap?.addMarker(MarkerOptions().position(latLng).title("Marker Title"))
+    }
+
 
 
     private fun setNewLocation(latLng: LatLng) {
