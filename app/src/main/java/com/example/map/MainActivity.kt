@@ -9,6 +9,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.fragment.app.Fragment
 import com.example.map.base.BaseActivity
+import com.example.map.base.observeChange
 import com.example.map.fragment.HomeFragment
 import com.example.map.viewmodel.HomeViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -35,6 +36,7 @@ import java.util.*
 class MainActivity : BaseActivity() {
 
     private val setLocationUpdate: SetLocationUpdate by KoinJavaComponent.inject(SetLocationUpdate::class.java)
+    private val setDestinationObserver: SetLocationUpdate by KoinJavaComponent.inject(SetLocationUpdate::class.java)
     private lateinit var sheetBehaviour: BottomSheetBehavior<ConstraintLayout>
 
     private val baseFragment = lazy {
@@ -44,7 +46,6 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-//        Places.initialize(this, "AIzaSyAE0tZYwMYJKg_q-IiuEzZk7i3pjj7kr1w")
         Places.initialize(this, "AIzaSyCseO4eeGw8HXc0kZ603qYC3nMUBZ4igdg")
         initFragNavController(this, baseFragment.value, TAG, supportFragmentManager, R.id.content)
         initSheet()
@@ -81,7 +82,9 @@ class MainActivity : BaseActivity() {
 
     private fun setUpLocationSearch() {
         editTextSearchLocation.setOnClickListener {
-            launchAddersPicker()
+            println("you have clicked me o")
+            setDestinationObserver.observer.value = "search"
+            //launchAddersPicker()
         }
     }
 
@@ -106,10 +109,12 @@ class MainActivity : BaseActivity() {
                 Activity.RESULT_OK -> {
                     val place = Autocomplete.getPlaceFromIntent(data!!)
                     Timber.i( "Place: " + place.name + ", " + place.id + place.address + place.addressComponents + ' ' + place.latLng?.longitude + ' ' + place.latLng?.latitude+ " " )
+
                     val addressComponent = place.addressComponents?.asList()
                     addressComponent?.let {
                         it.forEach { println(it) }
                     }
+
                     val completeAddress = addressComponent?.map { it.name }?.joinToString() ?: ""
 
                     // editTextTextPersonName.setText("${completeAddress}  ")

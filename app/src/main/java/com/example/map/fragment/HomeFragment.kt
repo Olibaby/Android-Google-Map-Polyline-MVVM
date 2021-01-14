@@ -2,6 +2,7 @@ package com.example.map.fragment
 
 import android.app.Activity
 import android.content.Intent
+import android.location.Location
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -9,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.example.map.R
 import com.example.map.SetLocationUpdate
+import com.example.map.activity.DestinationActivity
 import com.example.map.base.BaseFragment
 import com.example.map.base.observeChange
 import com.example.map.utils.CheckPermissionUtil
@@ -25,15 +27,19 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.Autocomplete
 import com.google.android.libraries.places.widget.AutocompleteActivity
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
+import com.nubis.watchguard.utils.locationutils.LocationHelper
+import com.qucoon.watchguard.utils.locationutils.LocationManager
 import kotlinx.android.synthetic.main.fragment_persistent_bottom_sheet.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.java.KoinJavaComponent
 import timber.log.Timber
 import java.util.*
 
-class HomeFragment : BaseFragment(), OnMapReadyCallback {
+class HomeFragment : BaseFragment(), OnMapReadyCallback , LocationManager{
+    lateinit var locationHelper: LocationHelper
     private val homeViewModel:HomeViewModel by sharedViewModel()
     private val setLocationUpdate: SetLocationUpdate by KoinJavaComponent.inject(SetLocationUpdate::class.java)
+    private val setDestinationObserver: SetLocationUpdate by KoinJavaComponent.inject(SetLocationUpdate::class.java)
     var mGoogleMap: GoogleMap? = null
     var mapView: MapView? = null
 
@@ -65,6 +71,12 @@ class HomeFragment : BaseFragment(), OnMapReadyCallback {
             println("i am observing")
             setNewLocation(it)
         }
+
+        setDestinationObserver.observer.observeChange(viewLifecycleOwner){
+            //mFragmentNavigation.pushFragment(EnterDestinationFragment())
+            val intent = Intent(activity, DestinationActivity::class.java)
+            activity!!.startActivity(intent)
+        }
     }
 
     private fun initViews() {
@@ -75,7 +87,8 @@ class HomeFragment : BaseFragment(), OnMapReadyCallback {
 
         CheckPermissionUtil.checkLocation(context!!,object:PermissionCallback(){
             override fun onPermissionGranted() {
-
+                locationHelper = LocationHelper(activity!!, this@HomeFragment)
+                locationHelper.startLocationUpdates()
                 if (mapView != null) {
                     // Initialise the MapView
                     mapView!!.onCreate(null)
@@ -101,7 +114,7 @@ class HomeFragment : BaseFragment(), OnMapReadyCallback {
         mGoogleMap?.isMyLocationEnabled = true
         mGoogleMap?.uiSettings?.isZoomControlsEnabled = false
         mGoogleMap?.uiSettings?.isZoomGesturesEnabled = true
-        mGoogleMap?.uiSettings?.isMyLocationButtonEnabled = false
+        mGoogleMap?.uiSettings?.isMyLocationButtonEnabled = true
 
 
         //mGoogleMap!!.moveCamera(CameraUpdateFactory.newLatLng(ny))
@@ -131,6 +144,23 @@ class HomeFragment : BaseFragment(), OnMapReadyCallback {
         val cameraPosition = CameraPosition.Builder().target(latLng).zoom(15f).build()
         mGoogleMap!!.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
 
+    }
+
+    override fun onLocationChanged(location: Location?) {
+        setCameraOnLocation(location)
+
+    }
+
+    private fun setCameraOnLocation(location: Location?) {
+        location?.let {
+            val currentLatLng = LatLng(location.latitude, location.longitude)
+            mGoogleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f))
+
+        }
+    }
+
+    override fun getLastKnownLocation(location: Location?) {
+        setCameraOnLocation(location)
     }
 
 

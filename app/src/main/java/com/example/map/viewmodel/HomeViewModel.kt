@@ -5,5 +5,6 @@ import com.google.android.gms.maps.model.LatLng
 import com.qucoon.rubiescircle.utils.SingleLiveEvent
 
 class HomeViewModel: BaseViewModel() {
-    var setLocationObserver = SingleLiveEvent<LatLng>()
+    var setPickup = SingleLiveEvent<String>()
+    var setDestination = SingleLiveEvent<String>()
 }
