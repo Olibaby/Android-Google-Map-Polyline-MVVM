@@ -76,7 +76,10 @@ class EnterDestinationFragment : BaseFragment() {
 
 
     private fun observerViewModel() {
-        homeViewModel.currentAddress.observeChange(viewLifecycleOwner){
+//        homeViewModel.currentAddress.observeChange(viewLifecycleOwner){
+//            editTextPickup.setText(it)
+//        }
+        setLocationUpdate.currentAddress.observeChange(viewLifecycleOwner){
             editTextPickup.setText(it)
         }
 
@@ -157,45 +160,16 @@ class EnterDestinationFragment : BaseFragment() {
           // and once again when the user makes a selection (for example when calling fetchPlace()).
           val token = AutocompleteSessionToken.newInstance()
 
-          // Create a RectangularBounds object.
-          val bounds = RectangularBounds.newInstance(
-                  LatLng(-33.880490, 151.184363),
-                  LatLng(-33.858754, 151.229596)
-          )
 
-          // Use the builder to create a FindAutocompletePredictionsRequest.
-          // Call either setLocationBias() OR setLocationRestriction().
-          //.setLocationBias(bounds)
-//          val request =  FindAutocompletePredictionsRequest.builder()
-//                          .setLocationRestriction(bounds)
-//                          //.setOrigin(LatLng(-33.8749937, 151.2041382))
-//                        //  .setCountry("NG")
-//                         // .setTypeFilter(TypeFilter.ADDRESS)
-//                          .setSessionToken(token)
-//                          .setQuery(query)
-//                          .build()
           val requests = FindAutocompletePredictionsRequest.builder().setCountry("NG").setSessionToken(token).setQuery(query).build()
 
           placesClient.findAutocompletePredictions(requests).addOnSuccessListener { response: FindAutocompletePredictionsResponse ->
               predictionList = response.autocompletePredictions
               suggestionList.clear()
               suggestionList.addAll(response.autocompletePredictions.map { it.getFullText(null).toString() })
-              //response.autocompletePredictions.map { it.placeId}
               println("HERE ARE THE SUGGESTIONS $suggestionList")
               updateRecycler(selectType)
 
-//                      for (prediction in response.autocompletePredictions) {
-//                          println("calling place preciction success inside")
-//
-//
-////                          Log.i(TAG, prediction.placeId)
-////                          Log.i(TAG, prediction.getPrimaryText(null).toString())
-////                          println("calling place preciction success log")
-////
-//                          suggestionList.add(prediction.getFullText(null).toString())
-//                          println(suggestionList)
-//                          updateRecycler()
-//                      }
           }.addOnFailureListener { exception: Exception? ->
               println("calling place preciction fail")
                       if (exception is ApiException) {

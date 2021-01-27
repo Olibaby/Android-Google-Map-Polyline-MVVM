@@ -8,5 +8,6 @@ data class SetLocationUpdate(
     val SetLocationObserver:SingleLiveEvent<LatLng>,
     var pickup: String = "",
     var destination: String = "",
-    var getLatLng: SingleLiveEvent<LatLng>
+    var getLatLng: SingleLiveEvent<LatLng>,
+    var currentAddress: SingleLiveEvent<String>
 )

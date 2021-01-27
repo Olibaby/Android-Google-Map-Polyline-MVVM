@@ -180,8 +180,9 @@ class HomeFragment : BaseFragment(), OnMapReadyCallback , LocationManager{
         val postalCode: String = addresses[0].getPostalCode()
         val knownName: String = addresses[0].getFeatureName() // Only if available else return NULL
 
-        homeViewModel.currentAddress.value = address + city + state
-        println("current address is ${homeViewModel.currentAddress.value}")
+//        homeViewModel.currentAddress.value = address + city + state
+//        println("current address is ${homeViewModel.currentAddress.value}")
+        setLocationUpdate.currentAddress.value = address + city + state
     }
 
 

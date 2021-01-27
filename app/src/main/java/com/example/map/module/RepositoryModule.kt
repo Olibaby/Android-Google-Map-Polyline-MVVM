@@ -7,6 +7,6 @@ import org.koin.dsl.module
 
 val repoModule = module {
 
-    single { SetLocationUpdate(SingleLiveEvent(),SingleLiveEvent(), String(), String(), SingleLiveEvent()) }
+    single { SetLocationUpdate(SingleLiveEvent(),SingleLiveEvent(), String(), String(), SingleLiveEvent(), SingleLiveEvent()) }
 
 }
