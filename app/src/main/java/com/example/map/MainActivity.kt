@@ -50,6 +50,15 @@ class MainActivity : BaseActivity() {
         initFragNavController(this, baseFragment.value, TAG, supportFragmentManager, R.id.content)
         initSheet()
         setUpLocationSearch()
+        setUpObservers()
+    }
+
+    private fun setUpObservers() {
+        if (setLocationUpdate.destination.isNotEmpty()){
+            editTextSearchLocation.setText(setLocationUpdate.destination)
+        } else {
+            println("No location")
+        }
     }
 
 

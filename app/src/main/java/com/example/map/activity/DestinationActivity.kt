@@ -21,6 +21,12 @@ class DestinationActivity : BaseActivity() {
         Places.initialize(this, "AIzaSyCseO4eeGw8HXc0kZ603qYC3nMUBZ4igdg")
         supportActionBar?.hide()
         initFragNavController(this, baseFragment.value, DestinationActivity.TAG, supportFragmentManager, R.id.content2)
+
+//        val currentAddress = intent.getStringExtra("current address")
+//        println("Test CLLicked: $currentAddress")
+
+        //This code is to pass the value to Fragment
+//        currentAddress?.let { EnterDestinationFragment.newInstance(it) }
     }
 
     companion object{

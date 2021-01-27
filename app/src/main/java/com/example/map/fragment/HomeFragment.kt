@@ -1,10 +1,10 @@
 package com.example.map.fragment
 
-import android.app.Activity
 import android.content.Intent
+import android.location.Address
+import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,23 +16,15 @@ import com.example.map.base.observeChange
 import com.example.map.utils.CheckPermissionUtil
 import com.example.map.viewmodel.HomeViewModel
 import com.github.euzee.permission.PermissionCallback
-import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.*
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.widget.Autocomplete
-import com.google.android.libraries.places.widget.AutocompleteActivity
-import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.nubis.watchguard.utils.locationutils.LocationHelper
 import com.qucoon.watchguard.utils.locationutils.LocationManager
-import kotlinx.android.synthetic.main.fragment_persistent_bottom_sheet.*
-import org.koin.android.viewmodel.ext.android.sharedViewModel
+import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import org.koin.java.KoinJavaComponent
-import timber.log.Timber
 import java.util.*
 
 class HomeFragment : BaseFragment(), OnMapReadyCallback , LocationManager{
@@ -67,16 +59,24 @@ class HomeFragment : BaseFragment(), OnMapReadyCallback , LocationManager{
     }
 
     private fun observeViewModel() {
-        setLocationUpdate.SetLocationObserver.observeChange(viewLifecycleOwner){
-            println("i am observing")
-            setNewLocation(it)
-        }
+                  //Google autocomplete observer
+//        setLocationUpdate.SetLocationObserver.observeChange(viewLifecycleOwner){
+//            println("i am observing")
+//            setNewLocation(it)
+//        }
 
         setDestinationObserver.observer.observeChange(viewLifecycleOwner){
-            //mFragmentNavigation.pushFragment(EnterDestinationFragment())
             val intent = Intent(activity, DestinationActivity::class.java)
+//            intent.putExtra("current address", homeViewModel.currentAddress.value)
             activity!!.startActivity(intent)
         }
+
+        homeViewModel.getLatLng.observeChange(viewLifecycleOwner){
+            setNewLocation(it)
+        }
+//        setLocationUpdate.getLatLng.observeChange(viewLifecycleOwner){
+//            setNewLocation(it)
+//        }
     }
 
     private fun initViews() {
@@ -117,7 +117,6 @@ class HomeFragment : BaseFragment(), OnMapReadyCallback , LocationManager{
         mGoogleMap?.uiSettings?.isMyLocationButtonEnabled = true
 
 
-        //mGoogleMap!!.moveCamera(CameraUpdateFactory.newLatLng(ny))
         addMarker(6.436160, 3.523290)
         addMarker(6.436160, 3.503290)
         addMarker(6.436160, 3.522290)
@@ -135,7 +134,7 @@ class HomeFragment : BaseFragment(), OnMapReadyCallback , LocationManager{
 
 
     private fun setNewLocation(latLng: LatLng) {
-        //homeViewModel.showMyCurrentLocation = false
+        homeViewModel.showMyCurrentLocation = false
         zoomInMap(latLng.latitude,latLng.longitude)
     }
 
@@ -154,13 +153,35 @@ class HomeFragment : BaseFragment(), OnMapReadyCallback , LocationManager{
     private fun setCameraOnLocation(location: Location?) {
         location?.let {
             val currentLatLng = LatLng(location.latitude, location.longitude)
-            mGoogleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f))
+            if (homeViewModel.showMyCurrentLocation){
+                mGoogleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f))
+                getAddressFromLatLng(location.latitude, location.longitude)
+            }
+
 
         }
     }
 
     override fun getLastKnownLocation(location: Location?) {
         setCameraOnLocation(location)
+    }
+
+
+    private fun getAddressFromLatLng(lat: Double, lng: Double){
+        var geocoder = Geocoder(requireContext(), Locale.getDefault())
+        var addresses = mutableListOf<Address>()
+
+        addresses = geocoder.getFromLocation(lat, lng, 1) // Here 1 represent max location result to returned, by documents it recommended 1 to 5
+
+        val address: String = addresses[0].getAddressLine(0) // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+        val city: String = addresses[0].getLocality()
+        val state: String = addresses[0].getAdminArea()
+        val country: String = addresses[0].getCountryName()
+        val postalCode: String = addresses[0].getPostalCode()
+        val knownName: String = addresses[0].getFeatureName() // Only if available else return NULL
+
+        homeViewModel.currentAddress.value = address + city + state
+        println("current address is ${homeViewModel.currentAddress.value}")
     }
 
 
