@@ -46,11 +46,17 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        supportActionBar?.hide()
         Places.initialize(this, "AIzaSyCseO4eeGw8HXc0kZ603qYC3nMUBZ4igdg")
         initFragNavController(this, baseFragment.value, TAG, supportFragmentManager, R.id.content)
         initSheet()
         setUpLocationSearch()
-        setUpObservers()
+        //setUpObservers()
+
+        //pass selected destination
+        val currentDestination = intent.getStringExtra("current destination")
+        println("current destination is $currentDestination")
+        editTextSearchLocation.setText(currentDestination)
     }
 
     private fun setUpObservers() {
@@ -59,6 +65,7 @@ class MainActivity : BaseActivity() {
         } else {
             println("No location")
         }
+
     }
 
 
@@ -110,45 +117,45 @@ class MainActivity : BaseActivity() {
     }
 
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        println("activity called")
-        if (requestCode == 1) {
-            when (resultCode) {
-                Activity.RESULT_OK -> {
-                    val place = Autocomplete.getPlaceFromIntent(data!!)
-                    Timber.i( "Place: " + place.name + ", " + place.id + place.address + place.addressComponents + ' ' + place.latLng?.longitude + ' ' + place.latLng?.latitude+ " " )
-
-                    val addressComponent = place.addressComponents?.asList()
-                    addressComponent?.let {
-                        it.forEach { println(it) }
-                    }
-
-                    val completeAddress = addressComponent?.map { it.name }?.joinToString() ?: ""
-
-                    // editTextTextPersonName.setText("${completeAddress}  ")
-                    place.latLng?.let {
-                        setLocationUpdate.SetLocationObserver.value = it
-                        println(setLocationUpdate.SetLocationObserver.value)
-                        //setNewLocation(it)
-                    }
-
-                }
-                AutocompleteActivity.RESULT_ERROR -> {
-                    // TODO: Handle the error.
-                    val status = Autocomplete.getStatusFromIntent(data!!)
-                    Timber.i( status.statusMessage)
-                    // mfragmentNavigation.openBottomDialogFragment(SingleChoiceQuestionBottomSheetFragment.newInstance("address","Could'nt find address","Yes, i want to type it myself","No Cancel"))
-
-                }
-                Activity.RESULT_CANCELED -> {
-                    //  mfragmentNavigation.openBottomDialogFragment(SingleChoiceQuestionBottomSheetFragment.newInstance("address","Could'nt find address","Yes, i want to type it myself","No Cancel"))
-                    // The user canceled the operation.
-                }
-                else -> println()  //mfragmentNavigation.openBottomDialogFragment(SingleChoiceQuestionBottomSheetFragment.newInstance("address","Could'nt find address","Yes, i want to type it myself","No Cancel"))
-            }
-        }
-    }
+//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+//        super.onActivityResult(requestCode, resultCode, data)
+//        println("activity called")
+//        if (requestCode == 1) {
+//            when (resultCode) {
+//                Activity.RESULT_OK -> {
+//                    val place = Autocomplete.getPlaceFromIntent(data!!)
+//                    Timber.i( "Place: " + place.name + ", " + place.id + place.address + place.addressComponents + ' ' + place.latLng?.longitude + ' ' + place.latLng?.latitude+ " " )
+//
+//                    val addressComponent = place.addressComponents?.asList()
+//                    addressComponent?.let {
+//                        it.forEach { println(it) }
+//                    }
+//
+//                    val completeAddress = addressComponent?.map { it.name }?.joinToString() ?: ""
+//
+//                    // editTextTextPersonName.setText("${completeAddress}  ")
+//                    place.latLng?.let {
+//                        setLocationUpdate.SetLocationObserver.value = it
+//                        println(setLocationUpdate.SetLocationObserver.value)
+//                        //setNewLocation(it)
+//                    }
+//
+//                }
+//                AutocompleteActivity.RESULT_ERROR -> {
+//                    // TODO: Handle the error.
+//                    val status = Autocomplete.getStatusFromIntent(data!!)
+//                    Timber.i( status.statusMessage)
+//                    // mfragmentNavigation.openBottomDialogFragment(SingleChoiceQuestionBottomSheetFragment.newInstance("address","Could'nt find address","Yes, i want to type it myself","No Cancel"))
+//
+//                }
+//                Activity.RESULT_CANCELED -> {
+//                    //  mfragmentNavigation.openBottomDialogFragment(SingleChoiceQuestionBottomSheetFragment.newInstance("address","Could'nt find address","Yes, i want to type it myself","No Cancel"))
+//                    // The user canceled the operation.
+//                }
+//                else -> println()  //mfragmentNavigation.openBottomDialogFragment(SingleChoiceQuestionBottomSheetFragment.newInstance("address","Could'nt find address","Yes, i want to type it myself","No Cancel"))
+//            }
+//        }
+//    }
 
 
 

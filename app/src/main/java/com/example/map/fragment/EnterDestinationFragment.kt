@@ -38,14 +38,15 @@ import java.util.*
 
 
 class EnterDestinationFragment : BaseFragment() {
-    private lateinit var placesClient: PlacesClient
+    private var placesClient: PlacesClient? = null
     private var predictionList = mutableListOf<AutocompletePrediction>()
     private var suggestionList = mutableListOf<String>()
     private val homeViewModel: HomeViewModel by sharedViewModel()
     private val setLocationUpdate: SetLocationUpdate by KoinJavaComponent.inject(SetLocationUpdate::class.java)
     private var selectedPrediction: AutocompletePrediction? = null
 
-//    val name = arguments?.getString(CURRENT_ADDR)
+
+    private var latlngList = mutableListOf<LatLng>()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,33 +72,26 @@ class EnterDestinationFragment : BaseFragment() {
 
     private fun moveToMainActivity(){
         val intent = Intent(activity, MainActivity::class.java)
+        intent.putExtra("current destination", setLocationUpdate.destination)
+        println("i'm passing $setLocationUpdate.destination")
         activity!!.startActivity(intent)
     }
 
 
     private fun observerViewModel() {
-//        homeViewModel.currentAddress.observeChange(viewLifecycleOwner){
+//        setLocationUpdate.currentAddress.observeChange(viewLifecycleOwner){
 //            editTextPickup.setText(it)
 //        }
-        setLocationUpdate.currentAddress.observeChange(viewLifecycleOwner){
-            editTextPickup.setText(it)
-        }
 
-        homeViewModel.setPickup.observeChange(viewLifecycleOwner){
-            editTextPickup.setText(it)
-            setLocationUpdate.pickup = it
-            //moveToMainActivity()
-        }
-        homeViewModel.setDestination.observeChange(viewLifecycleOwner){
-            editTextDestination.setText(it)
-            setLocationUpdate.destination = it
-            selectedPrediction?.let {
-                getLatLng(it)
-            }
-            //suggestionList.clear()
-            //moveToMainActivity()
+        setLocationUpdate.currentPlace.observeChange(viewLifecycleOwner){
+            println("CURRENT LOCATION - ${latlngList}")
+            editTextDestination.requestFocus()
+            editTextPickup.setText(it.address)
+            val latlng = LatLng(it.lat, it.lng)
+            latlngList.add(0, latlng)
         }
     }
+
 
     private fun initializePlaces() {
         Places.initialize(requireContext(), "AIzaSyCseO4eeGw8HXc0kZ603qYC3nMUBZ4igdg")
@@ -107,17 +101,11 @@ class EnterDestinationFragment : BaseFragment() {
     }
 
     private fun updateUI() {
-//        if (!homeViewModel.currentAddress.isNullOrEmpty()){
-//            editTextPickup.setText(homeViewModel.currentAddress)
-//        } else{
-//            println("No current address")
-//        }
-
-//        editTextPickup.setText(name)
-
         backBtn.setOnClickListener {
             moveToMainActivity()
         }
+
+        //suggestionList.clear()
 
         val textWatcher1 = object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
@@ -127,7 +115,14 @@ class EnterDestinationFragment : BaseFragment() {
 
             }
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                getPlacePrediction(s.toString(), SelectType.PICKUP)
+                if(editTextPickup.hasFocus()){
+                    for (lats in latlngList){
+                        println("this are the lats $lats")
+                        println("there are ${latlngList.count()} lats at the moment")
+                    }
+                    getPlacePrediction(s.toString(), SelectType.PICKUP)
+                }
+
             }
         }
 
@@ -154,6 +149,8 @@ class EnterDestinationFragment : BaseFragment() {
         DESTINATION
     }
 
+
+
       fun getPlacePrediction(query: String, selectType: SelectType){
           println("get place")
           // Create a new token for the autocomplete session. Pass this to FindAutocompletePredictionsRequest,
@@ -163,14 +160,14 @@ class EnterDestinationFragment : BaseFragment() {
 
           val requests = FindAutocompletePredictionsRequest.builder().setCountry("NG").setSessionToken(token).setQuery(query).build()
 
-          placesClient.findAutocompletePredictions(requests).addOnSuccessListener { response: FindAutocompletePredictionsResponse ->
+          placesClient?.findAutocompletePredictions(requests)?.addOnSuccessListener { response: FindAutocompletePredictionsResponse ->
               predictionList = response.autocompletePredictions
               suggestionList.clear()
               suggestionList.addAll(response.autocompletePredictions.map { it.getFullText(null).toString() })
               println("HERE ARE THE SUGGESTIONS $suggestionList")
               updateRecycler(selectType)
 
-          }.addOnFailureListener { exception: Exception? ->
+          }?.addOnFailureListener { exception: Exception? ->
               println("calling place preciction fail")
                       if (exception is ApiException) {
                           Log.e(TAG, "Place not found: " + exception.statusCode)
@@ -180,6 +177,7 @@ class EnterDestinationFragment : BaseFragment() {
 
     private fun updateRecycler(selectType: SelectType){
         println("i have entered the recycler")
+        println(suggestionList)
          DestinationRecycler.updateRecycler(requireContext(), suggestionList, R.layout.places_suggestion, listOf(R.id.suggestionsTextView),
                  {innerView, position ->
 
@@ -190,47 +188,101 @@ class EnterDestinationFragment : BaseFragment() {
          }, {position ->
              val address = suggestionList[position]
              selectedPrediction = predictionList[position]
+                 suggestionList.clear()
 
-             if (selectType == SelectType.PICKUP){
-                 homeViewModel.setPickup.value = address
+                 if (selectType == SelectType.PICKUP){
+                 editTextPickup.setText(address)
+                 setLocationUpdate.pickup = address
+                 selectedPrediction?.let {
+//                     suggestionList.clear()
+                     getLatLng(it, "pickup")
+                 }
              } else{
-                 homeViewModel.setDestination.value = address
+                 editTextDestination.setText(address)
+                 setLocationUpdate.destination = address
+                 selectedPrediction?.let {
+//                     suggestionList.clear()
+                     getLatLng(it, "destination")
+                 }
              }
 
          })
     }
 
-    private fun getLatLng(selectedPrediction: AutocompletePrediction){
+
+    override fun onDestroy() {
+        super.onDestroy()
+        placesClient = null
+
+        println("THIS FRAGMENT WAS DESTROYED ")
+    }
+
+    private fun getLatLng(selectedPrediction: AutocompletePrediction, type: String){
         println("i'm trying to get latlng")
         var placeId = selectedPrediction.placeId
         var placeFields = Arrays.asList(com.google.android.libraries.places.api.model.Place.Field.LAT_LNG)
         var fetchPlaceRequest = FetchPlaceRequest.builder(placeId, placeFields).build()
-        placesClient.fetchPlace(fetchPlaceRequest).addOnSuccessListener {
+        placesClient?.fetchPlace(fetchPlaceRequest)?.addOnSuccessListener {
             var place = it.place
             println("latlng is ${place.latLng}, address is ${place.address}")
-              homeViewModel.getLatLng.value = place.latLng
-//            setLocationUpdate.getLatLng.value = place.latLng
-        }.addOnFailureListener {
+
+//            if (type == "pickup"){
+//                //Place(place.latLng.latitude,place.latLng.longitude,place.address)
+//                latlngList.add(0, place)
+//            } else if (type == "destination"){
+//                latlngList.add(1, place)
+//            }
+//
+//            when(latlngList.count()){
+//                2 -> {
+//                    suggestionList.clear()
+//                    val intent = Intent()
+//                    intent.putExtra("pickupLat",latlngList[0].latLng?.latitude)
+//                    intent.putExtra("pickupLon",latlngList[0].latLng?.longitude)
+//
+//                    intent.putExtra("destinationLat",latlngList[1].latLng?.latitude)
+//                    intent.putExtra("destinationLon",latlngList[1].latLng?.longitude)
+//                    requireActivity().setResult(1,intent)
+//                    requireActivity().finish()
+//                }
+//                else -> {
+//                    println("count less than 2")
+//                }
+//            }
+
+
+            if (type == "pickup"){
+                //Place(place.latLng.latitude,place.latLng.longitude,place.address)
+                place.latLng?.let { it1 -> latlngList.set(0, it1) }
+            } else if (type == "destination"){
+                place.latLng?.let { it1 -> latlngList.add(1, it1) }
+            }
+
+            when(latlngList.count()){
+                2 -> {
+                    suggestionList.clear()
+                    val intent = Intent()
+                    intent.putExtra("pickupLat",latlngList[0].latitude)
+                    intent.putExtra("pickupLon",latlngList[0].longitude)
+
+                    intent.putExtra("destinationLat",latlngList[1].latitude)
+                    intent.putExtra("destinationLon",latlngList[1].longitude)
+                    requireActivity().setResult(1,intent)
+                    requireActivity().finish()
+                }
+                else -> {
+                    println("count less than 2")
+                }
+            }
+        }?.addOnFailureListener {
             println(it)
         }
+
     }
 
 
 
+
     companion object {
-//        const val CURRENT_ADDR = "current address"
-//
-//
-//        fun newInstance(currentAddress: String): EnterDestinationFragment {
-//            val fragment = EnterDestinationFragment()
-//
-//            val bundle = Bundle().apply {
-//                putString(CURRENT_ADDR, currentAddress)
-//            }
-//
-//            fragment.arguments = bundle
-//
-//            return fragment
-//        }
     }
 }

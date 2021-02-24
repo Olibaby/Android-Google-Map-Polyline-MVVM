@@ -2,6 +2,7 @@ package com.example.map.app
 
 import android.util.Log
 import androidx.multidex.MultiDexApplication
+import com.example.map.module.networkModule
 import com.example.map.module.repoModule
 import com.example.map.module.viewModelModule
 import org.koin.android.ext.koin.androidContext
@@ -20,7 +21,7 @@ class MyApplication :MultiDexApplication(){
     private fun initKoin() {
         startKoin {
             androidContext(this@MyApplication)
-            modules(listOf(repoModule, viewModelModule) )
+            modules(listOf(networkModule, repoModule, viewModelModule) )
         }
     }
 
